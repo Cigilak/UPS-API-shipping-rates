@@ -1,0 +1,195 @@
+# Python v3.6.5
+import json
+import requests
+import pandas as pd
+import time 
+
+pdims = pd.read_csv(r'')
+def ratereq(city, state, zipcode, country, length, width, height, weight):
+# dependencies/libraries
+
+# String manipulation of json file to post
+    ShipmentRequest = '''{ 
+            "UPSSecurity": {
+                    "UsernameToken": { 
+                            "Username": "", 
+                            "Password": "" 
+                            },
+                    "ServiceAccessToken": { 
+                            "AccessLicenseNumber": ""
+                            } 
+                    },
+            "RateRequest": {
+                    "Request": {
+                            "RequestOption": "Rate",
+                            "TransactionReference": {
+                                    "CustomerContext": "Your Customer Context" 
+                                    }
+                            }, 
+                    "Shipment": { 
+                            "Shipper": {
+                                    "Name": "",
+                                    "ShipperNumber": "",
+                                    "Address": {
+                                            "AddressLine": [ 
+                                                    "",
+                                                    "Address Line ",
+                                                    "Address Line "
+                                                    ], 
+                                            "City": "Atlanta",
+                                            "StateProvinceCode": "",
+                                            "PostalCode": "",
+                                            "CountryCode": "US" 
+                                            } 
+                                    }, 
+                            "ShipTo": {
+                                    "Name": "", 
+                                    "Address": {
+                                            "AddressLine": [
+                                                    "Address Line",
+                                                    "Address Line ", 
+                                                    "Address Line "
+                                                    ],
+                                            "City": "%s",
+                                            "StateProvinceCode": "%s",
+                                            "PostalCode": "%s",
+                                            "CountryCode": "%s" 
+                                            }
+                                    },
+                            "ShipFrom": {
+                                    "Name": "",
+                                    "Address": {
+                                            "AddressLine": [
+                                                    "", 
+                                                    "Address Line ",
+                                                    "Address Line "
+                                                    ],
+                                            "City": "",
+                                            "StateProvinceCode": "",
+                                            "PostalCode": "",
+                                            "CountryCode": "US"
+                                            }
+                                    },
+                            "Service": {
+                                    "Code": "03",
+                                    "Description": "Service Code Description"
+                                    },
+                            "Package": {
+                                    "PackagingType": {
+                                            "Code": "02",
+                                            "Description": "Rate"
+                                            },
+                                    "Dimensions": {
+                                            "UnitOfMeasurement": {
+                                                    "Code": "IN",
+                                                    "Description": "inches"
+                                                    },
+                                            "Length": "%s",
+                                            "Width": "%s",
+                                            "Height": "%s"
+                                            },
+                                    "PackageWeight": {
+                                            "UnitOfMeasurement": {
+                                                    "Code": "Lbs",
+                                                    "Description": "pounds"
+                                                    },
+                                            "Weight": "%s"
+                                            }
+                                    },
+                            "ShipmentRatingOptions": {
+                                    "NegotiatedRatesIndicator": ""
+                                    }
+                            }
+                    }
+            }''' %(city, state, zipcode, country,
+                   length, width, height, weight)
+
+    data = json.loads(ShipmentRequest, strict=False)
+
+    #data is convereted to json from python object
+    data_json = json.dumps(data)
+    try:
+        # the post request to the API & currently with testing URL, need to change
+        
+        x = requests.post("https://onlinetools.ups.com/rest/Rate", data = data_json)
+# printing the complete reposnse
+        #print(x.text)
+        data = x.json()
+        ratefunc = data['RateResponse']['RatedShipment']['NegotiatedRateCharges']['TotalCharge']['MonetaryValue']
+         # checking for fault before the print of requested data                 
+        #if data['Fault']['faultcode'] != '%Client%':        
+# printing the negotiated rate and the posted rates responsded            
+#        print("The NegotiatedRate is " + data['RateResponse']['RatedShipment']['NegotiatedRateCharges']['TotalCharge']['MonetaryValue']
+#            + " " + data['RateResponse']['RatedShipment']['NegotiatedRateCharges']['TotalCharge']['CurrencyCode'] + "\n" + "The Normal Posted Rate is " +
+#            data['RateResponse']['RatedShipment']['TotalCharges']['MonetaryValue'] + " " +
+#            data['RateResponse']['RatedShipment']['TotalCharges']['CurrencyCode'])
+    
+# exception handling for various exception             
+    except KeyError:
+        #ratefunc = data['RateResponse']['RatedShipment']['NegotiatedRateCharges']['TotalCharge']['MonetaryValue']
+        print(x.text)
+        #data = x.json()
+        
+        #print( "Error: " + data['Fault']['faultstring']+ "\n"
+        #        + "Error Code: " + data['Fault']['detail']['Errors']['ErrorDetail']['PrimaryErrorCode']['Code'] +
+        #          " Error Description: " + data['Fault']['detail']['Errors']['ErrorDetail']['PrimaryErrorCode']['Description'])
+       
+    except requests.exceptions.HTTPError as err:
+        
+            print(err)
+        #print(err)
+    except requests.exceptions.Timeout as t :
+        print(t)
+        sys.exit(1)
+
+    except Error:
+        pass
+# runs the fucniton ratereq in loop to start all over after a pull
+#while True:
+#    ratereq()
+#    if not ratereq(): break
+#print ("OK Goodbye")    
+
+    return ratefunc
+#city, state, zipcode, country, length, width, height, weight
+rates = []
+# loop for rows in dataframer and apply ratereq function
+lene = len(pdims)
+for product in range(0,lene):
+    
+    #global pdims
+    
+    cit = pdims.iloc[product]['cshpaddrShipCity']
+    stat = pdims.iloc[product]['cshpaddrShipState']
+    zipcod = pdims.iloc[product]['cshpaddrShipZip']
+    countr = pdims.iloc[product]['cshpaddrShipCountry']
+    lengt = int(pdims.iloc[product]['bl'])
+    width = int(pdims.iloc[product]['bb'])
+    heigh = int(pdims.iloc[product]['bh'])
+    weigh = int(pdims.iloc[product]['weight'])
+    #prod = pdims.iloc[product]['boxID']
+    #pdims.iloc[product,-1] = ratereq(city = str(pdims['cshpaddrShipCity']),state = str(pdims['cshpaddrShipState']), zipcode = str(pdims['cshpaddrShipCountry']),
+     #                                country = str(pdims['cshpaddrShipZip']),length = pdims['length'],width = pdims['width'],height = pdims['height'],weight = pdims['weight'])
+    #pdims.iloc[product,-1] = ratereq(city = cit,state = stat, zipcode = zipcod,country = countr,length = pdims['length'],width = pdims['width'],height = pdims['height'],weight = pdims['weight'])
+    time.sleep(0.05)
+    try:
+        
+        a = ratereq(cit,stat,zipcod,countr,lengt,width,heigh,weigh)
+    #a = ratereq('%s', '%s', '%s', '%s', pdims.iloc[product]['length'],pdims.iloc[product]['width'],pdims.iloc[product]['height'], pdims.iloc[product]['weight']) % (pdims['cshpaddrShipCity'],pdims['cshpaddrShipState'],pdims['cshpaddrShipCountry'],pdims['cshpaddrShipZip'])
+    #pdims.iloc[product,-1] = float(a)
+        rates.append(a)
+    except KeyError:
+        a = 0
+        rates.append(a)
+        #print()
+        continue
+    
+        
+                                                                                        
+
+    print("Shipment rate is %s , product is %s , %s, %s, %s and number %s  " % (a,lengt, width, heigh, weigh ,product)) 
+
+pdims.ix[0:lene-1, 'rateMOT2'] = rates
+#pdims.iloc[0:len(pdims),-1] = rates    
+pdims.to_csv('')
+    
